@@ -31,11 +31,6 @@ module.exports.getUsers = (req, res) => {
 
 module.exports.getUserById = async (req, res) => {
   try {
-    if (req.params.userId.length !== 24) {
-      return res.status(new DefaultError().statusCode).send({
-        message: new DefaultError().errorMessage,
-      });
-    }
     const user = await User.findById(req.params.userId);
     if (!user) {
       return res.status(new NotFoundError().statusCode).send({
