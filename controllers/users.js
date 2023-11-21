@@ -27,7 +27,7 @@ module.exports.addUser = (req, res) => {
 
 module.exports.getUsers = (req, res) => {
   User.find({})
-    .then((users) => res.status(201).send(users))
+    .then((users) => res.status(200).send(users))
     .catch(() => res.status(defaultError.statusCode).send({
       message: defaultError.errorMessage,
     }));
