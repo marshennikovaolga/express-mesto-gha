@@ -27,25 +27,32 @@ module.exports.addUser = (req, res) => {
 
 module.exports.getUsers = (req, res) => {
   User.find({})
-    .then((users) => res.send(users))
+    .then((users) => res.status(201).send(users))
     .catch(() => res.status(defaultError.statusCode).send({
       message: defaultError.errorMessage,
     }));
 };
 
 module.exports.getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    if (user) {
+  if (req.params.userId.length === 24) {
+    try {
+      const user = await User.findById(req.params.userId);
+
+      if (!user) {
+        return res.status(notFoundError.statusCode).send({
+          message: notFoundError.errorMessage,
+        });
+      }
+
       return res.send(user);
-    } else {
-      return res.status(notFoundError.statusCode).send({
-        message: notFoundError.errorMessage,
+    } catch (err) {
+      return res.status(defaultError.statusCode).send({
+        message: defaultError.errorMessage,
       });
     }
-  } catch (err) {
-    return res.status(defaultError.statusCode).send({
-      message: defaultError.errorMessage,
+  } else {
+    return res.status(badRequestError.statusCode).send({
+      message: badRequestError.errorMessage,
     });
   }
 };
