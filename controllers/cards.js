@@ -2,21 +2,25 @@ const BadRequestError = require('../errors/cards/card400');
 const NotFoundError = require('../errors/cards/card404');
 const DefaultError = require('../errors/cards/card500');
 
+const badRequestError = new BadRequestError();
+const notFoundError = new NotFoundError();
+const defaultError = new DefaultError();
+
 const Card = require('../models/card');
 
 module.exports.addCard = async (req, res) => {
   try {
     const { name, link } = req.body;
     const card = await Card.create({ name, link, owner: req.user._id });
-    res.send(card);
+    res.status(201).send(card);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      res.status(new BadRequestError().statusCode).send({
-        message: new BadRequestError().errorMessage,
+      res.status(badRequestError.statusCode).send({
+        message: badRequestError.errorMessage,
       });
     } else {
-      res.status(new DefaultError().statusCode).send({
-        message: new DefaultError().errorMessage,
+      res.status(defaultError.statusCode).send({
+        message: defaultError.errorMessage,
       });
     }
   }
@@ -27,8 +31,8 @@ module.exports.getCards = async (req, res) => {
     const cards = await Card.find({}).populate(['owner', 'likes']);
     res.send(cards);
   } catch (err) {
-    res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
+    res.status(defaultError.statusCode).send({
+      message: defaultError.errorMessage,
     });
   }
 };
@@ -38,20 +42,20 @@ module.exports.deleteCard = async (req, res) => {
     if (req.params.cardId.length === 24) {
       const card = await Card.findByIdAndDelete(req.params.cardId);
       if (!card) {
-        res.status(new NotFoundError().statusCode).send({
-          message: new NotFoundError().errorMessage,
+        res.status(notFoundError.statusCode).send({
+          message: notFoundError.errorMessage,
         });
         return;
       }
       res.send({ message: 'Карточка успешно удалена.' });
     } else {
-      res.status(new BadRequestError().statusCode).send({
-        message: new BadRequestError().errorMessage,
+      res.status(badRequestError.statusCode).send({
+        message: badRequestError.errorMessage,
       });
     }
   } catch (err) {
-    res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
+    res.status(defaultError.statusCode).send({
+      message: defaultError.errorMessage,
     });
   }
 };
@@ -63,8 +67,8 @@ module.exports.likeCard = async (req, res) => {
       const card = await Card.findById(cardId);
 
       if (!card) {
-        res.status(new NotFoundError().statusCode).send({
-          message: new NotFoundError().errorMessage,
+        res.status(notFoundError.statusCode).send({
+          message: notFoundError.errorMessage,
         });
         return;
       }
@@ -77,13 +81,13 @@ module.exports.likeCard = async (req, res) => {
 
       res.send(updatedCard);
     } else {
-      res.status(new BadRequestError().statusCode).send({
-        message: new BadRequestError().errorMessage,
+      res.status(badRequestError.statusCode).send({
+        message: badRequestError.errorMessage,
       });
     }
   } catch (err) {
-    res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
+    res.status(defaultError.statusCode).send({
+      message: defaultError.errorMessage,
     });
   }
 };
@@ -95,8 +99,8 @@ module.exports.dislikeCard = async (req, res) => {
       const card = await Card.findById(cardId);
 
       if (!card) {
-        res.status(new NotFoundError().statusCode).send({
-          message: new NotFoundError().errorMessage,
+        res.status(notFoundError.statusCode).send({
+          message: notFoundError.errorMessage,
         });
         return;
       }
@@ -109,13 +113,13 @@ module.exports.dislikeCard = async (req, res) => {
 
       res.send(updatedCard);
     } else {
-      res.status(new BadRequestError().statusCode).send({
-        message: new BadRequestError().errorMessage,
+      res.status(badRequestError.statusCode).send({
+        message: badRequestError.errorMessage,
       });
     }
   } catch (err) {
-    res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
+    res.status(defaultError.statusCode).send({
+      message: defaultError.errorMessage,
     });
   }
 };

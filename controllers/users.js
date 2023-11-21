@@ -2,6 +2,10 @@ const BadRequestError = require('../errors/users/user400');
 const NotFoundError = require('../errors/users/user404');
 const DefaultError = require('../errors/users/user500');
 
+const badRequestError = new BadRequestError();
+const notFoundError = new NotFoundError();
+const defaultError = new DefaultError();
+
 const User = require('../models/user');
 
 module.exports.addUser = (req, res) => {
@@ -10,12 +14,12 @@ module.exports.addUser = (req, res) => {
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(new BadRequestError().statusCode).send({
-          message: new BadRequestError().errorMessage,
+        res.status(badRequestError.statusCode).send({
+          message: badRequestError.errorMessage,
         });
       } else {
-        res.status(new DefaultError().statusCode).send({
-          message: new DefaultError().errorMessage,
+        res.status(defaultError.statusCode).send({
+          message: defaultError.errorMessage,
         });
       }
     });
@@ -24,76 +28,87 @@ module.exports.addUser = (req, res) => {
 module.exports.getUsers = (req, res) => {
   User.find({})
     .then((users) => res.send(users))
-    .catch(() => res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
+    .catch(() => res.status(defaultError.statusCode).send({
+      message: defaultError.errorMessage,
     }));
 };
 
 module.exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res.status(new NotFoundError().statusCode).send({
-        message: new NotFoundError().errorMessage,
+    console.log("User:", user);
+    return user
+      ? res.send(user)
+      : res.status(notFoundError.statusCode).send({
+        message: notFoundError.errorMessage,
       });
-    }
-    return res.send(user);
   } catch (err) {
-    return res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
+    console.error("Error:", err);
+    return res.status(defaultError.statusCode).send({
+      message: defaultError.errorMessage,
     });
   }
 };
 
-module.exports.editUserData = (req, res) => {
-  const { name, about } = req.body;
-  if (req.user._id) {
-    User.findByIdAndUpdate(
+module.exports.editUserData = async (req, res) => {
+  try {
+    const { name, about } = req.body;
+    if (!req.user._id) {
+      res.status(defaultError.statusCode).send({
+        message: defaultError.errorMessage,
+      });
+      return;
+    }
+    const user = await User.findByIdAndUpdate(
       req.user._id,
       { name, about },
       { new: true, runValidators: true },
-    )
-      .then((user) => res.send(user))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          res.status(new BadRequestError().statusCode).send({
-            message: new BadRequestError().errorMessage,
-          });
-        } else {
-          res.status(new NotFoundError().statusCode).send({
-            message: new NotFoundError().errorMessage,
-          });
-        }
+    ).orFail(() => {
+      throw res.status(notFoundError.statusCode).send({
+        message: notFoundError.errorMessage,
       });
-  } else {
-    res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
     });
+    res.send(user);
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      res.status(badRequestError.statusCode).send({
+        message: badRequestError.errorMessage,
+      });
+    } else {
+      res.status(defaultError.statusCode).send({
+        message: defaultError.errorMessage,
+      });
+    }
   }
 };
 
-module.exports.editUserAvatar = (req, res) => {
-  if (req.user._id) {
-    User.findByIdAndUpdate(
+module.exports.editUserAvatar = async (req, res) => {
+  try {
+    if (!req.user._id) {
+      res.status(defaultError.statusCode).send({
+        message: defaultError.errorMessage,
+      });
+      return;
+    }
+    const user = await User.findByIdAndUpdate(
       req.user._id,
       { avatar: req.body.avatar },
       { new: true, runValidators: true },
-    )
-      .then((user) => res.send(user))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          res.status(new BadRequestError().statusCode).send({
-            message: new BadRequestError().errorMessage,
-          });
-        } else {
-          res.status(new NotFoundError().statusCode).send({
-            message: new NotFoundError().errorMessage,
-          });
-        }
+    ).orFail(() => {
+      throw res.status(notFoundError.statusCode).send({
+        message: notFoundError.errorMessage,
       });
-  } else {
-    res.status(new DefaultError().statusCode).send({
-      message: new DefaultError().errorMessage,
     });
+    res.send(user);
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      res.status(badRequestError.statusCode).send({
+        message: badRequestError.errorMessage,
+      });
+    } else {
+      res.status(defaultError.statusCode).send({
+        message: defaultError.errorMessage,
+      });
+    }
   }
 };
