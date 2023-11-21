@@ -36,14 +36,14 @@ module.exports.getUsers = (req, res) => {
 module.exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
-    console.log("User:", user);
-    return user
-      ? res.send(user)
-      : res.status(notFoundError.statusCode).send({
+    if (user) {
+      return res.send(user);
+    } else {
+      return res.status(notFoundError.statusCode).send({
         message: notFoundError.errorMessage,
       });
+    }
   } catch (err) {
-    console.error("Error:", err);
     return res.status(defaultError.statusCode).send({
       message: defaultError.errorMessage,
     });
