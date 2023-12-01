@@ -1,9 +1,8 @@
 class NotFoundError extends Error {
-  constructor(message) {
+  constructor(message = 'Карточка с указанным _id не найдена.') {
     super(message);
     this.name = 'NotFoundError';
     this.statusCode = 404;
-    this.errorMessage = 'Карточка с указанным _id не найдена.';
   }
 }
 
