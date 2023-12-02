@@ -83,7 +83,7 @@ module.exports.likeCard = async (req, res, next) => {
         message: 'Вы поставили лайк на карточку',
         likedCard,
       };
-      res.send(likeReply);
+      res.status(200).send(likeReply);
     } else {
       next(new BadRequestError());
     }
@@ -118,7 +118,7 @@ module.exports.dislikeCard = async (req, res, next) => {
         message: 'Вы убрали лайк с карточки',
         dislikedCard,
       };
-      res.send(dislikeReply);
+      res.status(200).send(dislikeReply);
     } else {
       next(new BadRequestError());
     }

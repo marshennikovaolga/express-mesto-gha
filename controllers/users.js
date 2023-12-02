@@ -9,6 +9,8 @@ const DefaultError = require('../errors/users/user500');
 
 const User = require('../models/user');
 
+// при тестировании кода в postman приходят все статусы ошибок.
+// не понимаю, почему автотесты не проходят
 module.exports.addUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
