@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const config = require('../config');
+const constants = require('../utils/constants');
 
-const BadRequestError = require('../errors/users/user400');
-const NotFoundError = require('../errors/users/user404');
-const ConflictError = require('../errors/users/user409');
-const DefaultError = require('../errors/users/user500');
+const BadRequestError = require('../errors/badRequestError');
+const NotFoundError = require('../errors/notFoundError');
+const ConflictError = require('../errors/conflictError');
 
 const User = require('../models/user');
 
-// при тестировании кода в postman приходят все статусы ошибок.
-// не понимаю, почему автотесты не проходят
 module.exports.addUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
@@ -41,7 +40,7 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+      const token = jwt.sign({ _id: user._id }, config.JWT_KEY, { expiresIn: '7d' });
       res.status(200).send({ token });
     })
     .catch((err) => {
@@ -62,26 +61,25 @@ module.exports.getUsers = (req, res, next) => {
 };
 
 module.exports.getUserById = async (req, res, next) => {
-  try {
-    if (req.params.userId.length !== 24) {
-      throw new BadRequestError();
-    }
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      throw new NotFoundError();
-    }
-    res.send(user);
-  } catch (err) {
-    next(err);
-  }
+  User.findById(req.params.userId)
+    .orFail()
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError());
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError(constants.ID_MESSAGE));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.editUserData = async (req, res, next) => {
   try {
     const { name, about } = req.body;
-    if (!req.user._id) {
-      throw new DefaultError();
-    }
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { name, about },
@@ -89,7 +87,7 @@ module.exports.editUserData = async (req, res, next) => {
     ).orFail(() => {
       throw new NotFoundError();
     });
-    res.send(user);
+    res.status(200).send(user);
   } catch (err) {
     if (err instanceof mongoose.Error.ValidationError) {
       next(new BadRequestError());
@@ -101,9 +99,6 @@ module.exports.editUserData = async (req, res, next) => {
 
 module.exports.editUserAvatar = async (req, res, next) => {
   try {
-    if (!req.user._id) {
-      throw new DefaultError();
-    }
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { avatar: req.body.avatar },
@@ -111,7 +106,7 @@ module.exports.editUserAvatar = async (req, res, next) => {
     ).orFail(() => {
       throw new NotFoundError();
     });
-    res.send(user);
+    res.status(200).send(user);
   } catch (err) {
     if (err instanceof mongoose.Error.ValidationError) {
       next(new BadRequestError());

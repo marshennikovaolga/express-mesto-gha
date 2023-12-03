@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const InvalidCredentialsError = require('../errors/users/user401');
+const config = require('../config');
+const InvalidCredentialsError = require('../errors/invalidCredentialsError');
 
 module.exports = (req, res, next) => {
   const { authorization } = req.headers;
@@ -13,7 +14,7 @@ module.exports = (req, res, next) => {
     let payload;
 
     try {
-      payload = jwt.verify(token, 'secret-key');
+      payload = jwt.verify(token, config.JWT_KEY);
     } catch (err) {
       throw new InvalidCredentialsError('Необходимо авторизоваться.');
     }

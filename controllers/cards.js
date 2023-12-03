@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const Card = require('../models/card');
 
 const constants = require('../utils/constants');
-const BadRequestError = require('../errors/cards/card400');
-const ForbiddenError = require('../errors/cards/card403');
-const NotFoundError = require('../errors/cards/card404');
+const BadRequestError = require('../errors/badRequestError');
+const ForbiddenError = require('../errors/forbiddenError');
+const NotFoundError = require('../errors/notFoundError');
 
 module.exports.addCard = async (req, res, next) => {
   try {
@@ -23,7 +23,7 @@ module.exports.addCard = async (req, res, next) => {
 module.exports.getCards = async (req, res, next) => {
   try {
     const cards = await Card.find({}).populate(['owner', 'likes']);
-    res.send(cards);
+    res.status(200).send(cards);
   } catch (err) {
     next(err);
   }

@@ -6,11 +6,10 @@ const signinRouter = require('./signin');
 const auth = require('../middlewares/auth');
 const NotFoundError = require('../errors/notFoundError');
 
-router.use(auth);
 router.use('/signup', signupRouter);
 router.use('/signin', signinRouter);
-router.use('/users', userRouter);
-router.use('/cards', cardRouter);
+router.use('/users', auth, userRouter);
+router.use('/cards', auth, cardRouter);
 
 router.use('*', (req, res, next) => {
   next(new NotFoundError());

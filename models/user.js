@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const InvalidCredentialsError = require('../errors/users/user401');
+const InvalidCredentialsError = require('../errors/invalidCredentialsError');
 const { urlRegex, emailRegex } = require('../utils/constants');
 
 const userSchema = new mongoose.Schema({
