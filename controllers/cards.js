@@ -62,60 +62,74 @@ module.exports.deleteCard = (req, res, next) => {
     });
 };
 
-module.exports.likeCard = (req, res, next) => {
-  Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $addToSet: { likes: req.user._id } },
-    { new: true },
-  )
-    .populate(['owner', 'likes'])
-    .then((likedCard) => {
-      if (likedCard.likes.includes(req.user._id)) {
-        throw new BadRequestError(constants.LIKE_MESSAGE);
-      }
+module.exports.likeCard = async (req, res, next) => {
+  const { cardId } = req.params;
 
-      const likeReply = {
-        message: 'Вы поставили лайк на карточку',
-        likedCard,
-      };
-      res.status(200).send(likeReply);
-    })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError());
-      } else if (err instanceof mongoose.Error.CastError) {
-        next(new BadRequestError());
-      } else {
-        next(err);
-      }
-    });
+  try {
+    const card = await Card.findById(cardId);
+
+    if (!card) {
+      throw new NotFoundError();
+    }
+
+    const likedCard = await Card.findByIdAndUpdate(
+      cardId,
+      { $addToSet: { likes: req.user._id } },
+      { new: true },
+    )
+      .populate(['owner', 'likes']);
+
+    if (likedCard.likes.includes(req.user._id)) {
+      throw new BadRequestError(constants.LIKE_MESSAGE);
+    }
+
+    const likeReply = {
+      message: 'Вы поставили лайк на карточку',
+      likedCard,
+    };
+
+    res.status(200).send(likeReply);
+  } catch (err) {
+    if (err instanceof mongoose.Error.CastError) {
+      next(new BadRequestError());
+    } else {
+      next(err);
+    }
+  }
 };
 
-module.exports.dislikeCard = (req, res, next) => {
-  Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $pull: { likes: req.user._id } },
-    { new: true },
-  )
-    .populate(['owner', 'likes'])
-    .then((dislikedCard) => {
-      if (dislikedCard.likes.includes(req.user._id)) {
-        throw new BadRequestError(constants.DISLIKE_MESSAGE);
-      }
+module.exports.dislikeCard = async (req, res, next) => {
+  const { cardId } = req.params;
 
-      const dislikeReply = {
-        message: 'Вы убрали лайк с карточки',
-        dislikedCard,
-      };
-      res.status(200).send(dislikeReply);
-    })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError());
-      } else if (err instanceof mongoose.Error.CastError) {
-        next(new BadRequestError());
-      } else {
-        next(err);
-      }
-    });
+  try {
+    const card = await Card.findById(cardId);
+
+    if (!card) {
+      throw new NotFoundError();
+    }
+
+    const dislikedCard = await Card.findByIdAndUpdate(
+      cardId,
+      { $pull: { likes: req.user._id } },
+      { new: true },
+    )
+      .populate(['owner', 'likes']);
+
+    if (!dislikedCard.likes.includes(req.user._id)) {
+      throw new BadRequestError(constants.DISLIKE_MESSAGE);
+    }
+
+    const dislikeReply = {
+      message: 'Вы убрали лайк с карточки',
+      dislikedCard,
+    };
+
+    res.status(200).send(dislikeReply);
+  } catch (err) {
+    if (err instanceof mongoose.Error.CastError) {
+      next(new BadRequestError());
+    } else {
+      next(err);
+    }
+  }
 };
