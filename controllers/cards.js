@@ -81,8 +81,8 @@ module.exports.likeCard = (req, res, next) => {
       res.status(200).send(likeReply);
     })
     .catch((err) => {
-      if (err instanceof BadRequestError || err instanceof NotFoundError) {
-        next(err);
+      if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError());
       } else if (err instanceof mongoose.Error.CastError) {
         next(new BadRequestError());
       } else {
@@ -109,10 +109,9 @@ module.exports.dislikeCard = (req, res, next) => {
       };
       res.status(200).send(dislikeReply);
     })
-
     .catch((err) => {
-      if (err instanceof BadRequestError || err instanceof NotFoundError) {
-        next(err);
+      if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError());
       } else if (err instanceof mongoose.Error.CastError) {
         next(new BadRequestError());
       } else {
