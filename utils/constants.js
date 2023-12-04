@@ -4,7 +4,5 @@ const emailRegex = /^\S+@\S+\.\S+$/;
 module.exports = {
   urlRegex,
   emailRegex,
-  LIKE_MESSAGE: 'Вы уже поставили лайк этой карточке.',
-  DISLIKE_MESSAGE: 'Вы уже убрали лайк с карточки.',
   ID_MESSAGE: 'Пользователь по указанному _id не найден.',
 };
