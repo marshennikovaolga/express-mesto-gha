@@ -115,9 +115,9 @@ module.exports.dislikeCard = async (req, res, next) => {
     )
       .populate(['owner', 'likes']);
 
-    if (!dislikedCard.likes.includes(req.user._id)) {
-      throw new BadRequestError(constants.DISLIKE_MESSAGE);
-    }
+    // if (dislikedCard || !dislikedCard.likes.includes(req.user._id)) {
+    //   throw new BadRequestError(constants.DISLIKE_MESSAGE);
+    // }
 
     const dislikeReply = {
       message: 'Вы убрали лайк с карточки',
