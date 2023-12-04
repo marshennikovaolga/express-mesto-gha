@@ -77,41 +77,46 @@ module.exports.getUserById = async (req, res, next) => {
     });
 };
 
-module.exports.editUserData = async (req, res, next) => {
-  try {
-    const { name, about } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { name, about },
-      { new: true, runValidators: true },
-    ).orFail(() => {
+module.exports.editUserData = (req, res, next) => {
+  const { name, about } = req.body;
+  User.findByIdAndUpdate(
+    req.user._id,
+    { name, about },
+    { new: true, runValidators: true },
+  )
+    .orFail(() => {
       throw new NotFoundError();
+    })
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError());
+      } else {
+        next(err);
+      }
     });
-    res.status(200).send(user);
-  } catch (err) {
-    if (err instanceof mongoose.Error.ValidationError) {
-      next(new BadRequestError());
-    } else {
-      next(err);
-    }
-  }
 };
 
-module.exports.editUserAvatar = async (req, res, next) => {
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { avatar: req.body.avatar },
-      { new: true, runValidators: true },
-    ).orFail(() => {
+module.exports.editUserAvatar = (req, res, next) => {
+  const { avatar } = req.body;
+  User.findByIdAndUpdate(
+    req.user._id,
+    { avatar },
+    { new: true, runValidators: true },
+  )
+    .orFail(() => {
       throw new NotFoundError();
+    })
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError());
+      } else {
+        next(err);
+      }
     });
-    res.status(200).send(user);
-  } catch (err) {
-    if (err instanceof mongoose.Error.ValidationError) {
-      next(new BadRequestError());
-    } else {
-      next(err);
-    }
-  }
 };

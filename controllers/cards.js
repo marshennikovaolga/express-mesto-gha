@@ -6,123 +6,117 @@ const BadRequestError = require('../errors/badRequestError');
 const ForbiddenError = require('../errors/forbiddenError');
 const NotFoundError = require('../errors/notFoundError');
 
-module.exports.addCard = async (req, res, next) => {
-  try {
-    const { name, link } = req.body;
-    const card = await Card.create({ name, link, owner: req.user._id });
-    res.status(201).send(card);
-  } catch (err) {
-    if (err instanceof mongoose.Error.ValidationError) {
-      next(new BadRequestError());
-    } else {
-      next(err);
-    }
-  }
-};
-
-module.exports.getCards = async (req, res, next) => {
-  try {
-    const cards = await Card.find({}).populate(['owner', 'likes']);
-    res.status(200).send(cards);
-  } catch (err) {
-    next(err);
-  }
-};
-
-module.exports.deleteCard = async (req, res, next) => {
-  try {
-    if (req.params.cardId.length === 24) {
-      const card = await Card.findById(req.params.cardId);
-
-      if (!card) {
-        next(new NotFoundError());
-        return;
+module.exports.addCard = (req, res, next) => {
+  const { name, link } = req.body;
+  Card.create({ name, link, owner: req.user._id })
+    .then((card) => {
+      res.status(201).send(card);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError());
+      } else {
+        next(err);
       }
+    });
+};
+
+module.exports.getCards = (req, res, next) => {
+  Card.find({})
+    .populate(['owner', 'likes'])
+    .then((cards) => {
+      res.status(200).send(cards);
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+module.exports.deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
+    .then((card) => {
       if (!card.owner.equals(req.user._id)) {
         throw new ForbiddenError();
       }
-
-      await Card.deleteOne(card)
+      Card.deleteOne(card)
         .orFail()
         .then(() => {
           res.status(200).send({ message: 'Карточка успешно удалена.' });
         })
-        .catch(() => {
-          next(new NotFoundError());
+        .catch((err) => {
+          if (err instanceof mongoose.Error.DocumentNotFoundError) {
+            next(new NotFoundError());
+          } else if (err instanceof mongoose.Error.CastError) {
+            next(new BadRequestError());
+          } else {
+            next(err);
+          }
         });
-    } else {
-      next(new BadRequestError());
-    }
-  } catch (err) {
-    next(err);
-  }
+    })
+    .catch((err) => {
+      if (err.name === 'TypeError') {
+        next(new NotFoundError());
+      } else {
+        next(err);
+      }
+    });
 };
 
-module.exports.likeCard = async (req, res, next) => {
-  const { cardId } = req.params;
-  try {
-    if (cardId.length === 24) {
-      const card = await Card.findById(cardId);
-
-      if (!card) {
-        next(new NotFoundError());
-        return;
+module.exports.likeCard = (req, res, next) => {
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $addToSet: { likes: req.user._id } },
+    { new: true },
+  )
+    .populate(['owner', 'likes'])
+    .then((likedCard) => {
+      if (likedCard.likes.includes(req.user._id)) {
+        throw new BadRequestError(constants.LIKE_MESSAGE);
       }
-      if (card.likes.includes(req.user._id)) {
-        next(new BadRequestError(constants.LIKE_MESSAGE));
-        return;
-      }
-
-      const likedCard = await Card.findByIdAndUpdate(
-        cardId,
-        { $addToSet: { likes: req.user._id } },
-        { new: true },
-      ).populate(['owner', 'likes']);
 
       const likeReply = {
         message: 'Вы поставили лайк на карточку',
         likedCard,
       };
       res.status(200).send(likeReply);
-    } else {
-      next(new BadRequestError());
-    }
-  } catch (err) {
-    next(err);
-  }
+    })
+    .catch((err) => {
+      if (err instanceof BadRequestError || err instanceof NotFoundError) {
+        next(err);
+      } else if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError());
+      } else {
+        next(err);
+      }
+    });
 };
 
-module.exports.dislikeCard = async (req, res, next) => {
-  const { cardId } = req.params;
-  try {
-    if (cardId.length === 24) {
-      const card = await Card.findById(cardId);
-
-      if (!card) {
-        next(new NotFoundError());
-        return;
+module.exports.dislikeCard = (req, res, next) => {
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user._id } },
+    { new: true },
+  )
+    .populate(['owner', 'likes'])
+    .then((dislikedCard) => {
+      if (dislikedCard.likes.includes(req.user._id)) {
+        throw new BadRequestError(constants.DISLIKE_MESSAGE);
       }
-
-      if (!card.likes.includes(req.user._id)) {
-        next(new BadRequestError(constants.DISLIKE_MESSAGE));
-        return;
-      }
-
-      const dislikedCard = await Card.findByIdAndUpdate(
-        cardId,
-        { $pull: { likes: req.user._id } },
-        { new: true },
-      ).populate(['owner', 'likes']);
 
       const dislikeReply = {
         message: 'Вы убрали лайк с карточки',
         dislikedCard,
       };
       res.status(200).send(dislikeReply);
-    } else {
-      next(new BadRequestError());
-    }
-  } catch (err) {
-    next(err);
-  }
+    })
+
+    .catch((err) => {
+      if (err instanceof BadRequestError || err instanceof NotFoundError) {
+        next(err);
+      } else if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError());
+      } else {
+        next(err);
+      }
+    });
 };
